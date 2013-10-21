@@ -96,7 +96,7 @@ init([]) ->
 handle_call({Function_Name, Params}, _, State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
 	true ->
-	    R = (catch thrift_client:call(State#state.hbase_thrift_connection,
+	    {_, R} = (catch thrift_client:call(State#state.hbase_thrift_connection,
 					 Function_Name, 
 					 Params)),
 	    {reply, R, State};
@@ -121,7 +121,7 @@ handle_call(_Request, _From, State) ->
 handle_cast({Function_Name, Params}, State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
 	true ->
-	    R = (catch thrift_client:call(State#state.hbase_thrift_connection,
+	    {_, R} = (catch thrift_client:call(State#state.hbase_thrift_connection,
 					 Function_Name, 
 					 Params)),
 	    {reply, R, State};
