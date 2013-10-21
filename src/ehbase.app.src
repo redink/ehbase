@@ -1,0 +1,17 @@
+{application, ehbase,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { ehbase_app, []}},
+  {env, [
+	 {hbase_thrift_server, hbase_thrift},
+	 {hbase_thrift_ip,     "localhost"},
+	 {hbase_thrift_port,   9090},
+	 {hbase_thrift_params, []}
+	]}
+ ]}.
