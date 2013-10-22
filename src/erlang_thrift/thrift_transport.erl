@@ -57,17 +57,13 @@ new(Module, Data) when is_atom(Module) ->
 
 -spec write(#transport{}, iolist() | binary()) -> {#transport{}, ok | {error, _Reason}}.
 write(Transport, Data) ->
-io:format("module ~p, line ~p ~n", [?MODULE, ?LINE]),
     Module = Transport#transport.module,
-io:format("transport module ~p~n", [Module]),
     {NewTransData, Result} = Module:write(Transport#transport.data, Data),
     {Transport#transport{data = NewTransData}, Result}.
 
 -spec read(#transport{}, non_neg_integer()) -> {#transport{}, {ok, binary()} | {error, _Reason}}.
 read(Transport, Len) when is_integer(Len) ->
-io:format("module ~p, line ~p ~n", [?MODULE, ?LINE]),
     Module = Transport#transport.module,
-io:format("transport module ~p~n", [Module]),
     {NewTransData, Result} = Module:read(Transport#transport.data, Len),
     {Transport#transport{data = NewTransData}, Result}.
 

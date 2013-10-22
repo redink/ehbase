@@ -48,12 +48,10 @@ new(Socket, Opts) when is_list(Opts) ->
 
 %% Data :: iolist()
 write(This = #data{socket = Socket}, Data) ->
-    io:format("module ~p, line ~p ~n", [?MODULE, ?LINE]),
     {This, gen_tcp:send(Socket, Data)}.
 
 read(This = #data{socket=Socket, recv_timeout=Timeout}, Len)
   when is_integer(Len), Len >= 0 ->
-    io:format("module ~p, line ~p ~n", [?MODULE, ?LINE]),
     case gen_tcp:recv(Socket, Len, Timeout) of
         Err = {error, timeout} ->
             error_logger:info_msg("read timeout: peer conn ~p", [inet:peername(Socket)]),
