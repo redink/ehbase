@@ -138,7 +138,7 @@ handle_call({reset_connection}, _,
                                       Hbase_Thrift_Params) of
         {ok, NewConnection} ->
             lager:debug("reset connection successed"),
-            {reply, ok, #state{hbase_thrift_connection = NewConnection}};
+            {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
         _Any ->
             lager:error("ehbase agent start error, info ~p~n", [_Any]),
             {stop, error}
