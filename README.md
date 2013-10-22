@@ -34,7 +34,7 @@ you will get all tables in the HBase, after using Pid_For_Use you should return 
 	4> pooler:return_member(hbase_thrift, Pid_For_Use).
 	
 ## todo 
-* refine interface fuction of `hbase_thrift`'s support
+* refine interface function of `hbase_thrift`'s support
 
 ## thanks
 * Erlang Thrift Library
