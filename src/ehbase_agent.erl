@@ -95,42 +95,42 @@ init([]) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({getTableNames}, _, 
-        #state{hbase_thrift_connection = Connection} = State) ->
-    {_, R} = (catch thrift_client:call(Connection, getTableNames, [])),
-    {reply, R, State};
+	    #state{hbase_thrift_connection = Connection} = State) ->
+    {NewConnection, Result} = (catch thrift_client:call(Connection, getTableNames, [])),
+    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
 handle_call({getColumnDescriptors, TableName}, _,
-        #state{hbase_thrift_connection = Connection} = State) ->
-    {_, R} = (catch thrift_client:call(Connection, 
-                                        getColumnDescriptors, 
-                                        [TableName])),
-    {reply, R, State};
+	    #state{hbase_thrift_connection = Connection} = State) ->
+    {NewConnection, Result} = (catch thrift_client:call(Connection, 
+							getColumnDescriptors, 
+							[TableName])),
+    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
 handle_call({getTableRegions, TableName}, _, 
-        #state{hbase_thrift_connection = Connection} = State) ->
-    {_, R} = (catch thrift_client:call(Connection,
-                                        getTableRegions,
-                                        [TableName])),
-    {reply, R, State};
+	    #state{hbase_thrift_connection = Connection} = State) ->
+    {NewConnection, Result} = (catch thrift_client:call(Connection,
+							getTableRegions,
+							[TableName])),
+    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
 handle_call({Function_Name, Params}, _, 
-        #state{hbase_thrift_connection = Connection} = State) ->
+	    #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
             {NewConnection, Result} = (catch thrift_client:call(Connection,
-                                                Function_Name, 
-                                                Params)),
+								Function_Name, 
+								Params)),
             {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
         false ->
             {reply, "function or params error", State}
     end;
 
 handle_call({reset_connection}, _, 
-        #state{hbase_thrift_ip         = Hbase_Thrift_IP,
-               hbase_thrift_port       = Hbase_Thrift_Port,
-               hbase_thrift_server     = Hbase_Thrift_Server,
-               hbase_thrift_params     = Hbase_Thrift_Params,
-               hbase_thrift_connection = Connection} = State) ->
+	    #state{hbase_thrift_ip         = Hbase_Thrift_IP,
+		   hbase_thrift_port       = Hbase_Thrift_Port,
+		   hbase_thrift_server     = Hbase_Thrift_Server,
+		   hbase_thrift_params     = Hbase_Thrift_Params,
+		   hbase_thrift_connection = Connection} = State) ->
     catch thrift_client:close(Connection),
     case catch thrift_client_util:new(Hbase_Thrift_IP,
                                       Hbase_Thrift_Port,
@@ -159,12 +159,12 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_cast({Function_Name, Params}, 
-        #state{hbase_thrift_connection = Connection} = State) ->
+	    #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
             {NewConnection, Result} = (catch thrift_client:call(Connection,
-                                                Function_Name, 
-                                                Params)),
+								Function_Name, 
+								Params)),
             {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
         false ->
             {reply, "function or params error", State}
