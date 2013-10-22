@@ -15,15 +15,15 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-	 terminate/2, code_change/3]).
+     terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE). 
 
 -record(state, {hbase_thrift_server,
-		hbase_thrift_ip,
-		hbase_thrift_port,
-		hbase_thrift_params,
-		hbase_thrift_connection}).
+                hbase_thrift_ip,
+                hbase_thrift_port,
+                hbase_thrift_params,
+                hbase_thrift_connection}).
 
 %%%===================================================================
 %%% API
@@ -57,26 +57,27 @@ start_link() ->
 init([]) ->
     erlang:process_flag(trap_exit, true),
     Hbase_Thrift_Server = 
-	get_env_default(ehbase, hbase_thrift_server, hbase_thrift),
+        get_env_default(ehbase, hbase_thrift_server, hbase_thrift),
     Hbase_Thrift_IP     = 
-	get_env_default(ehbase, hbase_thrift_ip,     "localhost"),
+        get_env_default(ehbase, hbase_thrift_ip,     "localhost"),
     Hbase_Thrift_Port   = 
-	get_env_default(ehbase, hbase_thrift_port,   9090),
+        get_env_default(ehbase, hbase_thrift_port,   9090),
     Hbase_Thrift_Params =
-	get_env_default(ehbase, hbase_thrift_params, []),
+        get_env_default(ehbase, hbase_thrift_params, []),
     case catch thrift_client_util:new(Hbase_Thrift_IP,
-				      Hbase_Thrift_Port,
-				      Hbase_Thrift_Server, 
-				      Hbase_Thrift_Params) of
-	{ok, Connection} ->
-	    {ok, #state{hbase_thrift_server     = Hbase_Thrift_Server,
-			hbase_thrift_ip         = Hbase_Thrift_IP,
-			hbase_thrift_port       = Hbase_Thrift_Port,
-			hbase_thrift_params     = Hbase_Thrift_Params,
-			hbase_thrift_connection = Connection}};
-	_Any ->
-	    lager:error("ehbase agent start error, info ~p~n", [_Any]),
-	    {stop, error}
+                                      Hbase_Thrift_Port,
+                                      Hbase_Thrift_Server, 
+                                      Hbase_Thrift_Params) of
+        {ok, Connection} ->
+            lager:debug("ehbase agent started success"),
+            {ok, #state{hbase_thrift_server     = Hbase_Thrift_Server,
+                        hbase_thrift_ip         = Hbase_Thrift_IP,
+                        hbase_thrift_port       = Hbase_Thrift_Port,
+                        hbase_thrift_params     = Hbase_Thrift_Params,
+                        hbase_thrift_connection = Connection}};
+        _Any ->
+            lager:error("ehbase agent start error, info ~p~n", [_Any]),
+            {stop, error}
     end.
 
 %%--------------------------------------------------------------------
@@ -93,15 +94,35 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({Function_Name, Params}, _, State) ->
+handle_call({getTableNames}, _, 
+        #state{hbase_thrift_connection = Connection} = State) ->
+    {_, R} = (catch thrift_client:call(Connection, getTableNames, [])),
+    {reply, R, State};
+
+handle_call({getColumnDescriptors, TableName}, _,
+        #state{hbase_thrift_connection = Connection} = State) ->
+    {_, R} = (catch thrift_client:call(Connection, 
+                                        getColumnDescriptors, 
+                                        [TableName])),
+    {reply, R, State};
+
+handle_call({getTableRegions, TableName}, _, 
+        #state{hbase_thrift_connection = Connection} = State) ->
+    {_, R} = (catch thrift_client:call(Connection,
+                                        getTableRegions,
+                                        [TableName])),
+    {reply, R, State};
+
+handle_call({Function_Name, Params}, _, 
+        #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
-	true ->
-	    {_, R} = (catch thrift_client:call(State#state.hbase_thrift_connection,
-					 Function_Name, 
-					 Params)),
-	    {reply, R, State};
-	false ->
-	    {reply, "function or params error", State}
+        true ->
+            {_, R} = (catch thrift_client:call(Connection,
+                                                Function_Name, 
+                                                Params)),
+            {reply, R, State};
+        false ->
+            {reply, "function or params error", State}
     end;
 
 handle_call(_Request, _From, State) ->
@@ -118,15 +139,16 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({Function_Name, Params}, State) ->
+handle_cast({Function_Name, Params}, 
+        #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
-	true ->
-	    {_, R} = (catch thrift_client:call(State#state.hbase_thrift_connection,
-					 Function_Name, 
-					 Params)),
-	    {reply, R, State};
-	false ->
-	    {reply, "function or params error", State}
+        true ->
+            {_, R} = (catch thrift_client:call(Connection,
+                                                Function_Name, 
+                                                Params)),
+            {reply, R, State};
+        false ->
+            {reply, "function or params error", State}
     end;
 
 handle_cast(_Msg, State) ->
@@ -156,7 +178,9 @@ handle_info(_Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(Reason, State) ->
+    lager:error("hbase agent terminate, reason info ~p", [Reason]),
+    catch thrift_client:close(State#state.hbase_thrift_connection),
     ok.
 
 %%--------------------------------------------------------------------
@@ -173,10 +197,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+%% @doc get application env, if undefined will return Default
+%%
+-spec get_env_default(atom(), atom(), term()) -> term().
 get_env_default(App, Key, Default) ->
     case application:get_env(App, Key) of
-	undefined ->
-	    Default;
-	{ok, _Val} ->
-	    _Val
+        undefined ->
+            Default;
+        {ok, _Val} ->
+            _Val
     end.
