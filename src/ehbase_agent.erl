@@ -131,17 +131,23 @@ handle_call({reset_connection}, _,
 		   hbase_thrift_server     = Hbase_Thrift_Server,
 		   hbase_thrift_params     = Hbase_Thrift_Params,
 		   hbase_thrift_connection = Connection} = State) ->
-    catch thrift_client:close(Connection),
-    case catch thrift_client_util:new(Hbase_Thrift_IP,
-                                      Hbase_Thrift_Port,
-                                      Hbase_Thrift_Server, 
-                                      Hbase_Thrift_Params) of
-        {ok, NewConnection} ->
-            lager:debug("reset connection successed"),
-            {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
-        _Any ->
-            lager:error("ehbase agent start error, info ~p~n", [_Any]),
-            {stop, error}
+    case proplist:get_value(framed, Hbase_Thrift_Params) of
+	true ->
+	    catch thrift_client:close(Connection),
+	    case catch thrift_client_util:new(Hbase_Thrift_IP,
+					      Hbase_Thrift_Port,
+					      Hbase_Thrift_Server, 
+					      Hbase_Thrift_Params) of
+		{ok, NewConnection} ->
+		    lager:debug("reset connection successed"),
+		    {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
+		_Any ->
+		    lager:error("ehbase agent start error, info ~p~n", [_Any]),
+		    {stop, error}
+	    end
+	_Any ->
+	    lager:error("ehbase agent reset error, info ~p~n", [_Any]),
+	    {reply, ok, State}
     end;
 
 handle_call(_Request, _From, State) ->
