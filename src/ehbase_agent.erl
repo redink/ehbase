@@ -117,12 +117,31 @@ handle_call({Function_Name, Params}, _,
         #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
-            {_, R} = (catch thrift_client:call(Connection,
+            {NewConnection, Result} = (catch thrift_client:call(Connection,
                                                 Function_Name, 
                                                 Params)),
-            {reply, R, State};
+            {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
         false ->
             {reply, "function or params error", State}
+    end;
+
+handle_call({reset_connection}, _, 
+        #state{hbase_thrift_ip         = Hbase_Thrift_IP,
+               hbase_thrift_port       = Hbase_Thrift_Port,
+               hbase_thrift_server     = Hbase_Thrift_Server,
+               hbase_thrift_params     = Hbase_Thrift_Params,
+               hbase_thrift_connection = Connection} = State) ->
+    catch thrift_client:close(Connection),
+    case catch thrift_client_util:new(Hbase_Thrift_IP,
+                                      Hbase_Thrift_Port,
+                                      Hbase_Thrift_Server, 
+                                      Hbase_Thrift_Params) of
+        {ok, NewConnection} ->
+            lager:debug("reset connection successed"),
+            {reply, ok, #state{hbase_thrift_connection = NewConnection}};
+        _Any ->
+            lager:error("ehbase agent start error, info ~p~n", [_Any]),
+            {stop, error}
     end;
 
 handle_call(_Request, _From, State) ->
@@ -143,10 +162,10 @@ handle_cast({Function_Name, Params},
         #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
-            {_, R} = (catch thrift_client:call(Connection,
+            {NewConnection, Result} = (catch thrift_client:call(Connection,
                                                 Function_Name, 
                                                 Params)),
-            {reply, R, State};
+            {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
         false ->
             {reply, "function or params error", State}
     end;
