@@ -131,7 +131,7 @@ handle_call({reset_connection}, _,
 		   hbase_thrift_server     = Hbase_Thrift_Server,
 		   hbase_thrift_params     = Hbase_Thrift_Params,
 		   hbase_thrift_connection = Connection} = State) ->
-    case proplist:get_value(framed, Hbase_Thrift_Params) of
+    case proplists:get_value(framed, Hbase_Thrift_Params) of
 	true ->
 	    catch thrift_client:close(Connection),
 	    case catch thrift_client_util:new(Hbase_Thrift_IP,
@@ -205,7 +205,7 @@ handle_info(_Info, State) ->
 terminate(Reason, 
 	  #state{hbase_thrift_params = Hbase_Thrift_Params} = State) ->
     lager:error("hbase agent terminate, reason info ~p", [Reason]),
-    case proplist:get_value(framed, Hbase_Thrift_Params) of
+    case proplists:get_value(framed, Hbase_Thrift_Params) of
 	true ->
 	    catch thrift_client:close(State#state.hbase_thrift_connection),
 	    ok;

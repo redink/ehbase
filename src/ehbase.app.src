@@ -8,11 +8,5 @@
                   stdlib
                  ]},
   {mod, { ehbase_app, []}},
-  {env, [
-	 {profile, true},
-	 {hbase_thrift_server, hbase_thrift},
-	 {hbase_thrift_ip,     "localhost"},
-	 {hbase_thrift_port,   9090},
-	 {hbase_thrift_params, []}
-	]}
+  {env, []}
  ]}.
