@@ -6,7 +6,7 @@ Below the surface, `ehbase` uses the Erlang Thrift Library to connect to HBase u
 
 In addition, `ehbase` uses the [pooler](https://github.com/seth/pooler) for connection's pool encapsulate. But I used [my forked repo](https://github.com/redink/pooler) which support more feature and do not pull request to the the original branch for some reason for now.
 ## example
-There is one default configure in the file of `demo.config` for `pooler`, and you will find configure about `Thrift server`'s name, host, ip, and socket params in the file of `ehbase.app.src`. Of course, you can move these configure information to your `sys.config` file, that is your right. 
+There is one default configure in the file of `demo.config` for `pooler`, and you will also find configure about `Thrift server`'s name, host, ip, and socket params in the file of `demo.config`. Of course, you can move these configure information to your `sys.config` file, that is your right. 
 
 ### compile
 `ehbase` using `rebar` manager the whole project, you can use all the command of rebar
