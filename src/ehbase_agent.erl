@@ -144,10 +144,9 @@ handle_call({reset_connection}, _,
 		_Any ->
 		    lager:error("ehbase agent start error, info ~p~n", [_Any]),
 		    {stop, error}
-	    end
+	    end;
 	_Any ->
-	    lager:error("ehbase agent reset error, info ~p~n", [_Any]),
-	    {reply, ok, State}
+	    {reply, "can't reset connection", State}
     end;
 
 handle_call(_Request, _From, State) ->
@@ -203,10 +202,16 @@ handle_info(_Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
-terminate(Reason, State) ->
+terminate(Reason, 
+	  #state{hbase_thrift_params = Hbase_Thrift_Params} = State) ->
     lager:error("hbase agent terminate, reason info ~p", [Reason]),
-    catch thrift_client:close(State#state.hbase_thrift_connection),
-    ok.
+    case proplist:get_value(framed, Hbase_Thrift_Params) of
+	true ->
+	    catch thrift_client:close(State#state.hbase_thrift_connection),
+	    ok;
+	_    ->
+	    ok
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
