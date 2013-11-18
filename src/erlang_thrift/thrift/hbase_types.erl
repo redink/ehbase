@@ -74,7 +74,8 @@ struct_info('tScan') ->
           {4, {list, string}},
           {5, i32},
           {6, string},
-          {7, bool}]}
+          {7, i32},
+          {8, bool}]}
 ;
 
 struct_info('iOError') ->
@@ -155,7 +156,8 @@ struct_info_ext('tScan') ->
           {4, optional, {list, string}, 'columns', []},
           {5, optional, i32, 'caching', undefined},
           {6, optional, string, 'filterString', undefined},
-          {7, optional, bool, 'sortColumns', undefined}]}
+          {7, optional, i32, 'batchSize', undefined},
+          {8, optional, bool, 'sortColumns', undefined}]}
 ;
 
 struct_info_ext('iOError') ->
