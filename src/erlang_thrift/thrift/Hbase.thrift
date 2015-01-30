@@ -35,7 +35,7 @@ namespace cpp  apache.hadoop.hbase.thrift
 namespace rb Apache.Hadoop.Hbase.Thrift
 namespace py hbase
 namespace perl Hbase
-
+namespace php Hbase
 //
 // Types
 //
@@ -135,7 +135,7 @@ struct TColumn {
 struct TRowResult {
   1:Text row,
   2:optional map<Text, TCell> columns,
-  3:optional list<TColumn> sortedColumns 
+  3:optional list<TColumn> sortedColumns
 }
 
 /**
@@ -148,7 +148,8 @@ struct TScan {
   4:optional list<Text> columns,
   5:optional i32 caching,
   6:optional Text filterString,
-  7:optional bool sortColumns
+  7:optional i32 batchSize,
+  8:optional bool sortColumns
 }
 
 //
