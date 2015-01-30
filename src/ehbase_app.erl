@@ -13,6 +13,7 @@
 start(_StartType, _StartArgs) ->
     start_profiling(),
     lager:start(),
+    application:start(sync),
     application:start(pooler),
     ehbase_sup:start_link().
 

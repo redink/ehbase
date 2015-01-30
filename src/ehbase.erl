@@ -3,7 +3,9 @@
 -compile(export_all).
 
 get(TableName, Row, Column, Timeout) ->
+
     PidForUse = pooler:take_member(hbase_thrift),
+
     ExecuteResult =
         case catch gen_server:call(PidForUse,
                                    {get, [TableName, Row, Column, dict:new()]},
@@ -11,11 +13,12 @@ get(TableName, Row, Column, Timeout) ->
             {ok, Result} ->
                 pooler:return_member(hbase_thrift, PidForUse),
                 {true, Result};
-            _ ->
-                restart_pid(PidForUse),
+            _Any ->
+                reset_thrift_conn(PidForUse),
+                pooler:return_member(hbase_thrift, PidForUse),
                 {false, []}
         end,
     ExecuteResult.
 
-restart_pid(Pid) ->
-    Pid.
+reset_thrift_conn(Pid) ->
+    gen_server:call(Pid, {reset_connection}).

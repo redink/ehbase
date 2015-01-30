@@ -117,10 +117,23 @@ handle_call({Function_Name, Params}, _,
             #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
-            {NewConnection, Result} = (catch thrift_client:call(Connection,
-                                                                Function_Name,
-                                                                Params)),
-            {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
+            case {NewConnection, Result} =
+                    (catch thrift_client:call(Connection,
+                                              Function_Name,
+                                              Params)) of
+                {'EXIT', {Exit, ExitError}} ->
+                    lager:error("** thrift_client call ~p : ~p~n", [Exit, ExitError]),
+                    {reply, {Exit, []}, State};
+                {_, {exception, {iOError, IOError}}} ->
+                    lager:error("** thrift_client call iOError: ~p~n", [IOError]),
+                    {reply, {iOError, IOError}, State};
+                {_, {ok, _}} ->
+                    lager:debug("** thrift_client call successed: ~p~n", [Result]),
+                    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
+                _Any ->
+                    lager:error("** unexecpted error: ~p~n", [_Any]),
+                    {reply, Result, State}
+            end;
         false ->
             {reply, "function or params error", State}
     end;
