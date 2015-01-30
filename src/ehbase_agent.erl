@@ -15,7 +15,7 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-     terminate/2, code_change/3]).
+         terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE). 
 
@@ -95,58 +95,58 @@ init([]) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({getTableNames}, _, 
-	    #state{hbase_thrift_connection = Connection} = State) ->
+            #state{hbase_thrift_connection = Connection} = State) ->
     {NewConnection, Result} = (catch thrift_client:call(Connection, getTableNames, [])),
     {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
 handle_call({getColumnDescriptors, TableName}, _,
-	    #state{hbase_thrift_connection = Connection} = State) ->
+            #state{hbase_thrift_connection = Connection} = State) ->
     {NewConnection, Result} = (catch thrift_client:call(Connection, 
-							getColumnDescriptors, 
-							[TableName])),
+                                                        getColumnDescriptors,
+                                                        [TableName])),
     {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
 handle_call({getTableRegions, TableName}, _, 
-	    #state{hbase_thrift_connection = Connection} = State) ->
+            #state{hbase_thrift_connection = Connection} = State) ->
     {NewConnection, Result} = (catch thrift_client:call(Connection,
-							getTableRegions,
-							[TableName])),
+                                                        getTableRegions,
+                                                        [TableName])),
     {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
 handle_call({Function_Name, Params}, _, 
-	    #state{hbase_thrift_connection = Connection} = State) ->
+            #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
             {NewConnection, Result} = (catch thrift_client:call(Connection,
-								Function_Name, 
-								Params)),
+                                                                Function_Name,
+                                                                Params)),
             {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
         false ->
             {reply, "function or params error", State}
     end;
 
 handle_call({reset_connection}, _, 
-	    #state{hbase_thrift_ip         = Hbase_Thrift_IP,
-		   hbase_thrift_port       = Hbase_Thrift_Port,
-		   hbase_thrift_server     = Hbase_Thrift_Server,
-		   hbase_thrift_params     = Hbase_Thrift_Params,
-		   hbase_thrift_connection = Connection} = State) ->
+            #state{hbase_thrift_ip         = Hbase_Thrift_IP,
+                   hbase_thrift_port       = Hbase_Thrift_Port,
+                   hbase_thrift_server     = Hbase_Thrift_Server,
+                   hbase_thrift_params     = Hbase_Thrift_Params,
+                   hbase_thrift_connection = Connection} = State) ->
     case proplists:get_value(framed, Hbase_Thrift_Params) of
-	true ->
-	    catch thrift_client:close(Connection),
-	    case catch thrift_client_util:new(Hbase_Thrift_IP,
-					      Hbase_Thrift_Port,
-					      Hbase_Thrift_Server, 
-					      Hbase_Thrift_Params) of
-		{ok, NewConnection} ->
-		    lager:debug("reset connection successed"),
-		    {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
-		_Any ->
-		    lager:error("ehbase agent start error, info ~p~n", [_Any]),
-		    {stop, error}
-	    end;
-	_Any ->
-	    {reply, "can't reset connection", State}
+        true ->
+            catch thrift_client:close(Connection),
+            case catch thrift_client_util:new(Hbase_Thrift_IP,
+                                              Hbase_Thrift_Port,
+                                              Hbase_Thrift_Server,
+                                              Hbase_Thrift_Params) of
+                {ok, NewConnection} ->
+                    lager:debug("reset connection successed"),
+                    {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
+                _Any ->
+                    lager:error("ehbase agent start error, info ~p~n", [_Any]),
+                    {stop, error}
+            end;
+        _Any ->
+            {reply, "can't reset connection", State}
     end;
 
 handle_call(_Request, _From, State) ->
@@ -164,12 +164,12 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_cast({Function_Name, Params}, 
-	    #state{hbase_thrift_connection = Connection} = State) ->
+            #state{hbase_thrift_connection = Connection} = State) ->
     case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
         true ->
             {NewConnection, Result} = (catch thrift_client:call(Connection,
-								Function_Name, 
-								Params)),
+                                                                Function_Name, 
+                                                                Params)),
             {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
         false ->
             {reply, "function or params error", State}
@@ -203,14 +203,14 @@ handle_info(_Info, State) ->
 %% @end
 %%--------------------------------------------------------------------
 terminate(Reason, 
-	  #state{hbase_thrift_params = Hbase_Thrift_Params} = State) ->
+          #state{hbase_thrift_params = Hbase_Thrift_Params} = State) ->
     lager:error("hbase agent terminate, reason info ~p", [Reason]),
     case proplists:get_value(framed, Hbase_Thrift_Params) of
-	true ->
-	    catch thrift_client:close(State#state.hbase_thrift_connection),
-	    ok;
-	_    ->
-	    ok
+        true ->
+            catch thrift_client:close(State#state.hbase_thrift_connection),
+            ok;
+        _    ->
+            ok
     end.
 
 %%--------------------------------------------------------------------

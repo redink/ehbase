@@ -12,7 +12,7 @@
 
 start(_StartType, _StartArgs) ->
     start_profiling(),
-    application:start(lager),
+    lager:start(),
     application:start(pooler),
     ehbase_sup:start_link().
 
@@ -22,11 +22,11 @@ stop(_State) ->
 -spec start_profiling() -> profiling | not_profiling | {error, any()}.
 start_profiling() ->
     case application:get_env(ehbase, profile) of
-	{ok, true} ->
-	    {ok, _} = eprof:start(),
-	    eprof:start_profiling([self()]);
-	_ ->
-	    not_profiling
+    {ok, true} ->
+        {ok, _} = eprof:start(),
+        eprof:start_profiling([erlang:self()]);
+    _ ->
+        not_profiling
     end.
 
 -spec profile_output() -> ok.
