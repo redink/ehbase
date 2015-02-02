@@ -94,72 +94,66 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({getTableNames}, _, 
-            #state{hbase_thrift_connection = Connection} = State) ->
-    {NewConnection, Result} = (catch thrift_client:call(Connection, getTableNames, [])),
-    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
 
-handle_call({getColumnDescriptors, TableName}, _,
+handle_call({Function_Name, Params}, {FromPid, _Tag}, 
             #state{hbase_thrift_connection = Connection} = State) ->
-    {NewConnection, Result} = (catch thrift_client:call(Connection, 
-                                                        getColumnDescriptors,
-                                                        [TableName])),
-    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
-
-handle_call({getTableRegions, TableName}, _, 
-            #state{hbase_thrift_connection = Connection} = State) ->
-    {NewConnection, Result} = (catch thrift_client:call(Connection,
-                                                        getTableRegions,
-                                                        [TableName])),
-    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
-
-handle_call({Function_Name, Params}, _, 
-            #state{hbase_thrift_connection = Connection} = State) ->
-    case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
+    case lists:member(FromPid,
+                      erlang:element(2, erlang:process_info(erlang:self(), monitored_by))) of
         true ->
-            case {NewConnection, Result} =
-                    (catch thrift_client:call(Connection,
-                                              Function_Name,
-                                              Params)) of
-                {'EXIT', {Exit, ExitError}} ->
-                    lager:error("** thrift_client call ~p : ~p~n", [Exit, ExitError]),
-                    {reply, {Exit, []}, State};
-                {_, {exception, {iOError, IOError}}} ->
-                    lager:error("** thrift_client call iOError: ~p~n", [IOError]),
-                    {reply, {iOError, IOError}, State};
-                {_, {ok, _}} ->
-                    lager:debug("** thrift_client call successed: ~p~n", [Result]),
-                    {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
-                _Any ->
-                    lager:error("** unexecpted error: ~p~n", [_Any]),
-                    {reply, Result, State}
+            case erlang:is_atom(Function_Name) andalso erlang:is_list(Params) of
+                true ->
+                    case {NewConnection, Result} =
+                            (catch thrift_client:call(Connection,
+                                                      Function_Name,
+                                                      Params)) of
+                        {'EXIT', {Exit, ExitError}} ->
+                            lager:error("** thrift_client call ~p : ~p~n", [Exit, ExitError]),
+                            {reply, {Exit, []}, State};
+                        {_, {exception, {iOError, IOError}}} ->
+                            lager:error("** thrift_client call iOError: ~p~n", [IOError]),
+                            {reply, {iOError, IOError}, State};
+                        {_, {ok, _}} ->
+                            lager:debug("** thrift_client call successed: ~p~n", [Result]),
+                            {reply, Result, State#state{hbase_thrift_connection = NewConnection}};
+                        _Any ->
+                            lager:error("** unexecpted error: ~p~n", [_Any]),
+                            {reply, Result, State}
+                    end;
+                false ->
+                    {reply, "function or params error", State}
             end;
         false ->
-            {reply, "function or params error", State}
+            {reply, ok, State}
     end;
 
-handle_call({reset_connection}, _, 
+handle_call({reset_connection}, {FromPid, _Tag},
             #state{hbase_thrift_ip         = Hbase_Thrift_IP,
                    hbase_thrift_port       = Hbase_Thrift_Port,
                    hbase_thrift_server     = Hbase_Thrift_Server,
                    hbase_thrift_params     = Hbase_Thrift_Params,
                    hbase_thrift_connection = Connection} = State) ->
-    case proplists:get_value(framed, Hbase_Thrift_Params) of
+    case lists:member(FromPid,
+                      erlang:element(2, erlang:process_info(erlang:self(), monitored_by))) of
         true ->
-            catch thrift_client:close(Connection),
-            case catch thrift_client_util:new(Hbase_Thrift_IP,
-                                              Hbase_Thrift_Port,
-                                              Hbase_Thrift_Server,
-                                              Hbase_Thrift_Params) of
-                {ok, NewConnection} ->
-                    lager:debug("reset connection successed"),
-                    {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
+            case proplists:get_value(framed, Hbase_Thrift_Params) of
+                true ->
+                    catch thrift_client:close(Connection),
+                    case catch thrift_client_util:new(Hbase_Thrift_IP,
+                                                      Hbase_Thrift_Port,
+                                                      Hbase_Thrift_Server,
+                                                      Hbase_Thrift_Params) of
+                        {ok, NewConnection} ->
+                            lager:debug("reset connection successed"),
+                            {reply, ok, State#state{hbase_thrift_connection = NewConnection}};
+                        _Any ->
+                            lager:error("ehbase agent start error, info ~p~n", [_Any]),
+                            {stop, error}
+                    end;
                 _Any ->
-                    lager:error("ehbase agent start error, info ~p~n", [_Any]),
-                    {stop, error}
+                    {reply, "can't reset connection", State}
             end;
-        _Any ->
-            {reply, "can't reset connection", State}
+        false ->
+            {reply, ok, State}
     end;
 
 handle_call(_Request, _From, State) ->

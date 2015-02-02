@@ -55,7 +55,7 @@
 %% struct tRowResult
 
 -record(tRowResult, {row :: string() | binary(),
-                     columns :: dict(),
+                     columns :: dict:dict(),
                      sortedColumns :: list()}).
 
 %% struct tScan
