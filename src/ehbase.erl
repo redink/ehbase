@@ -4,7 +4,7 @@
 
 get(TableName, Row, Column, Timeout) ->
 
-    PidForUse = pooler:take_member(hbase_thrift),
+    PidForUse = pooler:take_member(hbase_thrift, Timeout),
 
     ExecuteResult =
         case catch gen_server:call(PidForUse,
